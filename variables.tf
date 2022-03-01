@@ -54,7 +54,7 @@ variable "fss_subnet_id" {
 }
 
 variable "shape" {
-  default = "VM.Standard.E3.Flex"
+  default = "VM.Standard.E4.Flex"
 }
 
 variable "flex_shape_ocpus" {
@@ -79,7 +79,7 @@ variable "bastion_image_id" {
 }
 
 variable "bastion_shape" {
-  default = "VM.Standard.E3.Flex"
+  default = "VM.Standard.E4.Flex"
 }
 
 variable "bastion_flex_shape_ocpus" {

@@ -1,0 +1,35 @@
+# Authentication
+tenancy_ocid         = "<tenancy_ocid>"
+user_ocid            = "<user_ocid>"
+fingerprint          = "<fingerprint>"
+private_key_path     = "<private_key_path>"
+
+# Region
+region = "<region>"
+
+# Compartment
+compartment_ocid = "<compartment_ocid>"
+
+# MySQL admin password
+admin_password = "<admin_password>"
+
+# MYSQL WordPress password
+wp_password = "<wp_password>"
+
+# wp_themes
+wp_themes = ["lodestar"]
+
+# wp_plugins
+wp_plugins = ["akismet","bnfw","classic-editor","coblocks","elementor"]
+
+# wp_site_title
+wp_site_title = "<wp_site_title>"
+       
+# wp_site_admin_user
+wp_site_admin_user = "<wp_site_admin_user>"
+
+# wp_site_admin_pass
+wp_site_admin_pass = "<wp_site_admin_pass>"
+
+# wp_site_admin_email
+wp_site_admin_email = "user.name@example.com"

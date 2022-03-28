@@ -381,7 +381,7 @@ data "template_file" "setup_wp" {
 }
 
 resource "oci_core_instance" "bastion_instance" {
-  count               = var.numberOfNodes > 1 && !var.use_bastion_service ? 1 : 0
+  count               = (var.numberOfNodes > 1 && !var.use_bastion_service && !var.inject_bastion_server_public_ip) ? 1 : 0
   availability_domain = var.availability_domain == "" ? data.oci_identity_availability_domains.ADs.availability_domains[0]["name"] : var.availability_domain
   compartment_id      = var.compartment_ocid
   display_name        = "${var.label_prefix}BastionVM"
@@ -416,7 +416,7 @@ resource "oci_core_instance" "bastion_instance" {
 
 
 resource "oci_bastion_bastion" "bastion-service" {
-  count            = var.numberOfNodes > 1 && var.use_bastion_service ? 1 : 0
+  count            = (var.numberOfNodes > 1 && var.use_bastion_service && !var.inject_bastion_service_id) ? 1 : 0
   bastion_type     = "STANDARD"
   compartment_id   = var.compartment_ocid
   target_subnet_id = var.wp_subnet_id
@@ -429,7 +429,7 @@ resource "oci_bastion_bastion" "bastion-service" {
 resource "oci_bastion_session" "ssh_via_bastion_service" {
   depends_on = [oci_core_instance.WordPress]
   count      = var.numberOfNodes > 1 && var.use_bastion_service ? 1 : 0
-  bastion_id = oci_bastion_bastion.bastion-service[0].id
+  bastion_id = var.bastion_service_id == "" ? oci_bastion_bastion.bastion-service[0].id : var.bastion_service_id 
 
   key_details {
     public_key_content = tls_private_key.public_private_key_pair.public_key_openssh
@@ -548,7 +548,7 @@ resource "null_resource" "WordPress_provisioner_without_bastion" {
 }
 
 resource "null_resource" "WordPress_provisioner_with_bastion" {
-  count = var.numberOfNodes > 1 ? 1 : 0
+  count = (var.numberOfNodes > 1 && !var.inject_bastion_server_public_ip) ? 1 : 0
   depends_on = [oci_core_instance.WordPress,
     oci_core_network_security_group.WordPressFSSSecurityGroup,
     oci_core_network_security_group_security_rule.WordPressFSSSecurityIngressTCPGroupRules1,
@@ -695,11 +695,159 @@ resource "null_resource" "WordPress_provisioner_with_bastion" {
 
 }
 
+resource "null_resource" "WordPress_provisioner_with_injected_bastion_server_public_ip" {
+  count = (var.numberOfNodes > 1 && var.inject_bastion_server_public_ip) ? 1 : 0
+  depends_on = [oci_core_instance.WordPress,
+    oci_core_network_security_group.WordPressFSSSecurityGroup,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityIngressTCPGroupRules1,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityIngressTCPGroupRules2,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityIngressUDPGroupRules1,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityIngressUDPGroupRules2,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityEgressTCPGroupRules1,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityEgressTCPGroupRules2,
+    oci_core_network_security_group_security_rule.WordPressFSSSecurityEgressUDPGroupRules1,
+    oci_file_storage_export.WordPressExport,
+    oci_file_storage_file_system.WordPressFilesystem,
+    oci_file_storage_export_set.WordPressExportset,
+  oci_file_storage_mount_target.WordPressMountTarget]
+
+  provisioner "file" {
+    content     = data.template_file.install_php.rendered
+    destination = local.php_script
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/htaccess"
+    destination = local.htaccess
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.configure_local_security.rendered
+    destination = local.security_script
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.create_wp_db.rendered
+    destination = local.create_wp_db
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.setup_fss.rendered
+    destination = local.setup_fss
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.setup_wp.rendered
+    destination = local.setup_wp
+
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      type                = "ssh"
+      host                = data.oci_core_vnic.WordPress_vnic1.private_ip_address
+      agent               = false
+      timeout             = "5m"
+      user                = var.vm_user
+      private_key         = tls_private_key.public_private_key_pair.private_key_pem
+      bastion_host        = var.bastion_server_public_ip
+      bastion_user        = var.vm_user
+      bastion_private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+
+    inline = [
+      "chmod +x ${local.php_script}",
+      "sudo ${local.php_script}",
+      "chmod +x ${local.security_script}",
+      "sudo ${local.security_script}",
+      "chmod +x ${local.create_wp_db}",
+      "sudo ${local.create_wp_db}",
+      "chmod +x ${local.setup_fss}",
+      "sudo ${local.setup_fss}",
+      "chmod +x ${local.setup_wp}",
+      "sudo ${local.setup_wp}"
+    ]
+
+  }
+
+}
+
 # Create WordPressImage
 
 resource "oci_core_image" "wordpress_instance_image" {
   count          = var.numberOfNodes > 1 ? 1 : 0
-  depends_on     = [null_resource.WordPress_provisioner_with_bastion]
+  depends_on     = [null_resource.WordPress_provisioner_with_bastion, null_resource.WordPress_provisioner_with_injected_bastion_server_public_ip]
   compartment_id = var.compartment_ocid
   instance_id    = oci_core_instance.WordPress.id
   display_name   = "WordPress_instance_image"
@@ -725,7 +873,7 @@ resource "oci_core_instance" "WordPress_from_image" {
     subnet_id        = var.wp_subnet_id
     display_name     = "${var.label_prefix}${var.display_name}${count.index + 2}"
     assign_public_ip = false
-    hostname_label   = "${var.display_name}${count.index + 2}"
+    hostname_label   = "${var.label_prefix}${var.display_name}${count.index + 2}"
   }
 
   dynamic "agent_config" {
@@ -760,7 +908,7 @@ resource "oci_core_instance" "WordPress_from_image" {
 resource "oci_bastion_session" "ssh_via_bastion_service2plus" {
   depends_on = [oci_core_instance.WordPress]
   count      = var.numberOfNodes > 1 && var.use_bastion_service ? var.numberOfNodes - 1 : 0
-  bastion_id = oci_bastion_bastion.bastion-service[0].id
+  bastion_id = var.bastion_service_id == "" ? oci_bastion_bastion.bastion-service[0].id : var.bastion_service_id 
 
   key_details {
     public_key_content = tls_private_key.public_private_key_pair.public_key_openssh

@@ -20,7 +20,7 @@ variable "availability_domain" {
 
 variable "display_name" {
   description = "The name of the instance. "
-  default     = ""
+  default     = "wordpress"
 }
 
 variable "numberOfNodes" {
@@ -80,6 +80,22 @@ variable "bastion_image_id" {
 
 variable "bastion_shape" {
   default = "VM.Standard.E4.Flex"
+}
+
+variable "inject_bastion_service_id" {
+  default = false
+}
+
+variable "bastion_service_id" {
+  default = ""
+}
+
+variable "inject_bastion_server_public_ip" {
+  default = false
+}
+
+variable "bastion_server_public_ip" {
+  default = ""
 }
 
 variable "bastion_flex_shape_ocpus" {

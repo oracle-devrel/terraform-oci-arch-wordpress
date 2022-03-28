@@ -1,25 +1,30 @@
 ## Copyright (c) 2022 Oracle and/or its affiliates.
 ## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
 
-output "wp_home_URL" {
-  value = "http://${module.wordpress.public_ip[0]}/"
+output "wordpress_home_URL" {
+  value = "http://${module.oci-arch-wordpress.public_ip[0]}/"
+}
+
+output "wordpress_wp-admin_URL" {
+  value = "http://${module.oci-arch-wordpress.public_ip[0]}/wp-admin/"
+}
+
+output "wp_site_admin_user" {
+  value = var.wp_site_admin_user
+}
+
+output "wp_site_admin_pass" {
+  value = var.wp_site_admin_pass
 }
 
 output "generated_ssh_private_key" {
-  value     = module.wordpress.generated_ssh_private_key
+  value     = module.oci-arch-wordpress.generated_ssh_private_key
   sensitive = true
 }
 
-output "wp_name" {
-  value = var.wp_name
-}
-
-output "wp_password" {
-  value = var.wp_password
-}
-
-output "wp_database" {
-  value = var.wp_schema
+output "generated_ssh_public_key" {
+  value     = module.oci-arch-wordpress.generated_ssh_public_key
+  sensitive = true
 }
 
 output "mds_instance_ip" {

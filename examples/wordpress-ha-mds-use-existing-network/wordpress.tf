@@ -1,7 +1,7 @@
 ## Copyright (c) 2022, Oracle and/or its affiliates. 
 ## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
 
-module "wordpress" {
+module "oci-arch-wordpress" {
   source                    = "github.com/oracle-devrel/terraform-oci-arch-wordpress"
   tenancy_ocid              = var.tenancy_ocid
   vcn_id                    = oci_core_virtual_network.wp_mds_vcn.id
@@ -22,8 +22,8 @@ module "wordpress" {
   wp_schema                 = var.wp_schema
   wp_name                   = var.wp_name
   wp_password               = var.wp_password
-  wp_themes                 = var.wp_themes
-  wp_plugins                = var.wp_plugins
+  wp_plugins                = tolist(split(",",var.wp_plugins))
+  wp_themes                 = tolist(split(",",var.wp_themes))
   wp_site_title             = var.wp_site_title
   wp_site_admin_user        = var.wp_site_admin_user
   wp_site_admin_pass        = var.wp_site_admin_pass

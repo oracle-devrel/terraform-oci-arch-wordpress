@@ -60,6 +60,34 @@ variable "label_prefix" {
   default     = ""
 }
 
+variable "lb_shape" {
+  default = "flexible"
+}
+
+variable "flex_lb_min_shape" {
+  default = "10"
+}
+
+variable "flex_lb_max_shape" {
+  default = "100"
+}
+
+variable "use_bastion_service" {
+  default = false
+}
+
+variable "bastion_shape" {
+  default = "VM.Standard.E3.Flex"
+}
+
+variable "bastion_flex_shape_ocpus" {
+  default = 1
+}
+
+variable "bastion_flex_shape_memory" {
+  default = 1
+}
+
 variable "instance_os" {
   description = "Operating system for compute instances"
   default     = "Oracle Linux"
@@ -118,15 +146,13 @@ variable "wp_auto_update" {
 }
 
 variable "wp_plugins" {
-  type        = list(string)
   description = "A list of WordPress plugins to install."
-  default     = ["hello-dolly"]
+  default     = "hello-dolly"
 }
 
 variable "wp_themes" {
-  type        = list(string)
   description = "A list of WordPress themes to install."
-  default     = ["lodestar", "twentysixteen"]
+  default     = "lodestar, twentysixteen"
 }
 
 variable "wp_site_url" {
@@ -197,3 +223,7 @@ variable "wp_instance_name" {
   default     = "wpvm"
 }
 
+variable "use_shared_storage" {
+  description = "Decide if you want to use shared NFS on OCI FSS"
+  default     = true
+}

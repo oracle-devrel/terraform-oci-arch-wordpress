@@ -2,7 +2,8 @@
 ## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
 
 module "oci-arch-wordpress" {
-  source                    = "github.com/oracle-devrel/terraform-oci-arch-wordpress"
+  source                    = "../../"
+  #source                    = "github.com/oracle-devrel/terraform-oci-arch-wordpress"
   tenancy_ocid              = var.tenancy_ocid
   vcn_id                    = oci_core_virtual_network.wp_mds_vcn.id
   numberOfNodes             = 1

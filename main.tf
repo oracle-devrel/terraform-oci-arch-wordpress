@@ -64,12 +64,12 @@ data "template_cloudinit_config" "cloud_init" {
 }
 
 locals {
-  php_script      = "~/install_php74.sh"
-  security_script = "~/configure_local_security.sh"
-  create_wp_db    = "~/create_wp_db.sh"
-  setup_wp        = "~/setup_wp.sh"
-  setup_fss       = "~/setup_fss.sh"
-  htaccess        = "~/htaccess"
+  php_script      = "/home/${var.vm_user}/install_php74.sh"
+  security_script = "/home/${var.vm_user}/configure_local_security.sh"
+  create_wp_db    = "/home/${var.vm_user}/create_wp_db.sh"
+  setup_wp        = "/home/${var.vm_user}/setup_wp.sh"
+  setup_fss       = "/home/${var.vm_user}/setup_fss.sh"
+  htaccess        = "/home/${var.vm_user}/htaccess"
 }
 
 data "oci_core_subnet" "wp_subnet_ds" {
@@ -347,6 +347,9 @@ resource "oci_core_public_ip" "WordPress_public_ip_for_single_node" {
   #  private_ip_id  = var.numberOfNodes == 1 ? data.oci_core_private_ips.WordPress_private_ips1.private_ips[0]["id"] : null
   private_ip_id = data.oci_core_private_ips.WordPress_private_ips1.private_ips[0]["id"]
   defined_tags  = var.defined_tags
+  lifecycle {
+    ignore_changes = [defined_tags]
+  }
 }
 
 resource "oci_core_public_ip" "WordPress_public_ip_for_multi_node" {
@@ -355,6 +358,9 @@ resource "oci_core_public_ip" "WordPress_public_ip_for_multi_node" {
   display_name   = "WordPress_public_ip_for_multi_node"
   lifetime       = "RESERVED"
   defined_tags   = var.defined_tags
+  lifecycle {
+    ignore_changes = [defined_tags]
+  }
 }
 
 data "template_file" "setup_wp" {

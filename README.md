@@ -26,8 +26,8 @@ This Module has the following folder structure:
 To deploy WordPress using this Module with minimal effort use this:
 
 ```hcl
-module "oci-arch-wordpress" {
-  source                    = "github.com/oracle-devrel/terraform-oci-arch-wordpress"
+module "oci-fk-wordpress" {
+  source                    = "github.com/mlinxfeld/terraform-oci-fk-wordpress"
   tenancy_ocid              = "<tenancy_ocid>"
   vcn_id                    = "<vcn_id>"
   numberOfNodes             = 1

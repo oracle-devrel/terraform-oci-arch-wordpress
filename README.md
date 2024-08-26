@@ -1,4 +1,4 @@
-# terraform-oci-arch-wordpress
+# terraform-oci-fk-wordpress
 
 This is Terraform module that deploys [WordPress](http://wordpress.org/) on [Oracle Cloud Infrastructure (OCI)](https://cloud.oracle.com/en_US/cloud-infrastructure).
 

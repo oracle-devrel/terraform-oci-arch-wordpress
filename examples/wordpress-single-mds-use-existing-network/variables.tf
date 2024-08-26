@@ -76,7 +76,7 @@ variable "admin_password" {
 
 variable "admin_username" {
   description = "MySQL Database Service Username"
-  default = "admin"
+  default = "mysql"
 }
 
 variable "ssh_authorized_keys_path" {

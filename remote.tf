@@ -293,3 +293,103 @@ resource "null_resource" "WordPress_provisioner_with_injected_bastion_server_pub
   }
 
 }
+
+resource "null_resource" "WordPress_provisioner_without_bastion" {
+  count      = var.numberOfNodes > 1 ? 0 : 1
+  depends_on = [oci_core_instance.WordPress, oci_core_public_ip.WordPress_public_ip_for_single_node]
+
+  provisioner "file" {
+    content     = data.template_file.install_php.rendered
+    destination = local.php_script
+
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/scripts/htaccess"
+    destination = local.htaccess
+
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.configure_local_security.rendered
+    destination = local.security_script
+
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.create_wp_db.rendered
+    destination = local.create_wp_db
+
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "file" {
+    content     = data.template_file.setup_wp.rendered
+    destination = local.setup_wp
+
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      host        = oci_core_public_ip.WordPress_public_ip_for_single_node[0].ip_address
+      agent       = false
+      timeout     = "5m"
+      user        = var.vm_user
+      private_key = tls_private_key.public_private_key_pair.private_key_pem
+    }
+
+    inline = [
+      "chmod +x ${local.php_script}",
+      "sudo ${local.php_script}",
+      "chmod +x ${local.security_script}",
+      "sudo ${local.security_script}",
+      "chmod +x ${local.create_wp_db}",
+      "sudo ${local.create_wp_db}",
+      "chmod +x ${local.setup_wp}",
+      "sudo ${local.setup_wp}"
+    ]
+
+  }
+
+}
+
